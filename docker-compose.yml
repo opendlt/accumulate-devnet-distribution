@@ -1,0 +1,25 @@
+# Optional: Docker Compose for users who prefer it
+# Most users should just use: docker run -d -p 26660:26660 accumulate-devnet
+
+version: '3.8'
+
+services:
+  accumulate-devnet:
+    build: .
+    container_name: accumulate-devnet
+    ports:
+      - "26660:26660"
+    environment:
+      - ACCUMULATE_NETWORK=DevNet
+      - ACCUMULATE_FAUCET_SEED=ci
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"network-status\",\"params\":{}}' http://127.0.0.1:26660/v3 >/dev/null"
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
