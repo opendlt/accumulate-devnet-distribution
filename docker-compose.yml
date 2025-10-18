@@ -1,5 +1,5 @@
-# Optional: Docker Compose for users who prefer it
-# Most users should just use: docker run -d -p 26660:26660 accumulate-devnet
+# Accumulate DevNet - Docker Compose
+# Runs a local devnet container with UDP tuning, persistence, and a /v2 describe healthcheck
 
 version: '3.8'
 
@@ -7,17 +7,34 @@ services:
   accumulate-devnet:
     build: .
     container_name: accumulate-devnet
+
+    # Exposed ports
     ports:
-      - "26660:26660"
+      - "26660:26660"               # API port
+      - "26661:26661"               # optional: port-forwarder port
+
+    # Environment variables
     environment:
       - ACCUMULATE_NETWORK=DevNet
       - ACCUMULATE_FAUCET_SEED=ci
+
     restart: unless-stopped
+
+    # Sysctl tuning for UDP receive buffers (fixes quic-go warning)
+    sysctls:
+      net.core.rmem_max: 2500000
+      net.core.rmem_default: 2500000
+
+    # Persistent data volume (ledger, snapshots, faucet, logs)
+    volumes:
+      - ./data:/root/.accumulate
+
+    # Healthcheck — uses /v2 describe endpoint for reliable readiness detection
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "curl -fsS -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"network-status\",\"params\":{}}' http://127.0.0.1:26660/v3 >/dev/null"
+          "curl -fsS -H 'content-type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"describe\",\"params\":{}}' http://127.0.0.1:26660/v2 >/dev/null || exit 1"
         ]
       interval: 20s
       timeout: 5s
