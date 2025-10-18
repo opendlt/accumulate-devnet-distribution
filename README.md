@@ -5,6 +5,10 @@ Local Accumulate blockchain for development and testing.
 ## Quick Start
 
 ```bash
+# Clone accumulate-devnet-distribution repo
+git clone https://github.com/opendlt/accumulate-devnet-distribution.git
+
+# Within local cloned directory
 # Build the DevNet image
 docker build -t accumulate-devnet .
 
